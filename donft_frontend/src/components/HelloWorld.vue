@@ -31,6 +31,10 @@
 </template>
 
 <script>
+
+import Web3Modal from "web3modal";
+
+
 export default {
   name: 'HelloWorld',
   props: {
