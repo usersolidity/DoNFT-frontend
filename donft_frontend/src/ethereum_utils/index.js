@@ -7,7 +7,6 @@ import untar from "js-untar"
 import {getNftInfosByAddress} from "../api";
 import axios from "axios";
 import {Status} from "../store";
-import opensea from "opensea";
 
 export async function detectWeb3Providers () {
     let provider = null
@@ -431,6 +430,5 @@ export async function sendWrappedTokenTo(provider, fromAddress, toAddress, token
     const bundleContract = getBundleContract(provider, bundleContractAddress)
     return await bundleContract.transferFrom(fromAddress, toAddress, tokenId)
 }
-opensea
 
 export {connectToMetamask}
