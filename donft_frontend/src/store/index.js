@@ -3,7 +3,6 @@ import Vuex from 'vuex'
 import {
     connectToMetamask,
     deployNFTtoIPFS,
-    detectWeb3Providers,
     getAccountBalance,
     listTokensOfOwner,
     mintNFT,
@@ -16,7 +15,7 @@ import {
     unconnectWeb3Provider
 } from "../ethereum_utils";
 import {getEffects, modifyPicture} from "../api";
-import {BigNumber} from "ethers";
+import {BigNumber, ethers} from "ethers";
 import * as IPFS from "ipfs-core";
 import {getImageURLFromObject} from "../utilities";
 
@@ -65,7 +64,9 @@ const store = new Vuex.Store({
         nftTransactionHash: null,
         globalLoading: false,
         result: null,
-        status: Status.ChoosingParameters
+        status: Status.ChoosingParameters,
+        web3modal: null,
+        active: false,
     },
     mutations: {
         setIpfs (state, ipfsInstance) {
@@ -129,6 +130,12 @@ const store = new Vuex.Store({
         SET_TOKEN_IMAGE (state, {contractAddress, tokenId, tokenImage}) {
             setTokenProperty(state, contractAddress, tokenId, 'localImage', tokenImage)
         },
+        SET_WEB3_MODAL (state, web3modal) {
+            state.web3modal = web3modal
+        },
+        SET_ACTIVE (state, active) {
+          state.active = active
+        },
         setEthersProvider (state, ether) {
             state.ethersProvider = ether
         },
@@ -167,9 +174,51 @@ const store = new Vuex.Store({
         async setIpfs ({commit}) {
             commit('setIpfs', await IPFS.create())
         },
-        async setWeb3EhereumProvider ({commit}) {
-            let provider = await detectWeb3Providers()
-            commit('setEthersProvider', provider)
+        async setWeb3EhereumProvider ({state, commit, dispatch}) {
+            const provider = await state.web3modal.connect();
+
+            const library = new ethers.providers.Web3Provider(provider, 'any')
+
+            library.pollingInterval = 12000
+            commit('setEthersProvider', library)
+
+            const accounts = await library.listAccounts()
+            if (accounts.length > 0) {
+                commit('setAccountAddress', accounts[0])
+            }
+            const network = await library.getNetwork()
+            commit('setNetwork', network.name)
+            commit('SET_ACTIVE', true)
+
+            provider.on("connect", async (info) => {
+                // let chainId = parseInt(info.chainId)
+                commit('setNetwork', info.name)
+                console.log("connect", info)
+            });
+
+            provider.on("accountsChanged", async (accounts) => {
+                if (accounts.length > 0) {
+                    commit('setAccountAddress', accounts[0])
+                } else {
+                    await dispatch('resetApp')
+                }
+                console.log("accountsChanged")
+            });
+            provider.on("chainChanged", async (chainId) => {
+                chainId = parseInt(chainId)
+                commit('setChainId', chainId)
+                console.log("chainChanged", chainId)
+            });
+        },
+        async resetApp({state, commit}) {
+            try {
+                await state.web3modal.clearCachedProvider();
+            } catch (error) {
+                console.error(error)
+            }
+            commit('setAccountAddress', null)
+            commit('setActive', false)
+            commit('setEthersProvider', null)
         },
         async setEmptyWeb3rovider ({commit}) {
             await unconnectWeb3Provider()

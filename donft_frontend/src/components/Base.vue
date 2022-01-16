@@ -1,5 +1,5 @@
 <template>
-  <b-container class="main g-0 d-flex min-vh-100 flex-column" role="main" fluid>
+  <b-container class="main d-flex min-vh-100 flex-column" role="main" fluid>
     <b-row>
       <b-col>
         <b-navbar toggleable="lg" type="dark" variant="dark">

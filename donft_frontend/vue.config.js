@@ -3,8 +3,11 @@
 /**
  * @type {import('@vue/cli-service').ProjectOptions}
  */
- module.exports = {
+module.exports = {
     configureWebpack: {
         devtool: 'source-map'
-      }
-  }
+    },
+    transpileDependencies: [
+        'web3modal-vue'
+    ]
+}
