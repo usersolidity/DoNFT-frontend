@@ -3,7 +3,8 @@
     <div v-for="(card, idx) in cards" class="col-auto pt-2 pb-3" :key="idx">
       <div @click="cardClicked(card.id || idx)" class="card card-overlay" :class="cardClass(card.id || idx)">
         <template v-if="getImage(card)">
-          <img v-if="contentType === 'image'" class="card-img-top card-img-fixed" :src="getImage(card)"
+
+          <img v-if="getImage(card).endsWith('.jpg')" class="card-img-top card-img-fixed" :src="getImage(card)"
                :alt="card.name">
           <video v-else-if="contentType === 'video'" autoplay loop class="embed-responsive-item">
             <source :src="getImage(card)" type="video/mp4">
