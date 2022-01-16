@@ -1,11 +1,4 @@
-// MY INFURA_ID, SWAP IN YOURS FROM https://infura.io/dashboard/ethereum
-export const INFURA_ID = "6c3a9507f03a49589e3cb762331f2026";
-
-// MY ETHERSCAN_ID, SWAP IN YOURS FROM https://etherscan.io/myapikey
-export const ETHERSCAN_KEY = "PSW8C433Q667DVEX5BCRMGNAH9FSGFZ7Q8";
-
-// BLOCKNATIVE ID FOR Notify.js:
-export const BLOCKNATIVE_DAPPID = "0b58206a-f3c0-4701-a62f-73c7243e8c77";
+export const INFURA_ID = process.env.VUE_APP_INFURA_ID;
 
 export const NETWORKS = {
   mainnet: {
@@ -14,6 +7,7 @@ export const NETWORKS = {
     chainId: 1,
     rpcUrl: `https://mainnet.infura.io/v3/${INFURA_ID}`,
     blockExplorer: "https://etherscan.io/",
+    isActive: false
   },
   kovan: {
     name: "kovan",
@@ -21,6 +15,7 @@ export const NETWORKS = {
     chainId: 42,
     rpcUrl: `https://kovan.infura.io/v3/${INFURA_ID}`,
     blockExplorer: "https://kovan.etherscan.io/",
+    isActive: false,
     faucet: "https://gitter.im/kovan-testnet/faucet", // https://faucet.kovan.network/
   },
   rinkeby: {
@@ -28,6 +23,7 @@ export const NETWORKS = {
     color: "#e0d068",
     chainId: 4,
     rpcUrl: `https://rinkeby.infura.io/v3/${INFURA_ID}`,
+    bundleContractAddress: "0x5F2688F00b250E423C6b461115e9eff52f1D7434",
     faucet: "https://faucet.rinkeby.io/",
     blockExplorer: "https://rinkeby.etherscan.io/",
     isActive: true,
@@ -49,6 +45,7 @@ export const NETWORKS = {
     chainId: 5,
     faucet: "https://goerli-faucet.slock.it/",
     blockExplorer: "https://goerli.etherscan.io/",
+    isActive: false,
     rpcUrl: `https://goerli.infura.io/v3/${INFURA_ID}`,
   },
   xdai: {
@@ -60,6 +57,7 @@ export const NETWORKS = {
     rpcUrl: "https://dai.poa.network",
     faucet: "https://xdai-faucet.top/",
     blockExplorer: "https://blockscout.com/poa/xdai/",
+    isActive: false
   },
   matic: {
     name: "matic",
@@ -70,6 +68,7 @@ export const NETWORKS = {
     rpcUrl: "https://rpc-mainnet.maticvigil.com",
     faucet: "https://faucet.matic.network/",
     blockExplorer: "https://explorer-mainnet.maticvigil.com//",
+    isActive: false
   },
   mumbai: {
     name: "mumbai",
@@ -80,6 +79,8 @@ export const NETWORKS = {
     rpcUrl: "https://rpc-mumbai.maticvigil.com",
     faucet: "https://faucet.matic.network/",
     blockExplorer: "https://mumbai-explorer.matic.today/",
+    bundleContractAddress: "0x66f6a9eeB19d36c48357e8B838Ee7Fc150227C39",
+    isActive: true
   },
   localArbitrum: {
     name: "localArbitrum",
@@ -87,6 +88,7 @@ export const NETWORKS = {
     chainId: 153869338190755,
     blockExplorer: "",
     rpcUrl: `http://localhost:8547`,
+    isActive: false
   },
   localArbitrumL1: {
     name: "localArbitrumL1",
@@ -94,6 +96,7 @@ export const NETWORKS = {
     chainId: 44010,
     blockExplorer: "",
     rpcUrl: `http://localhost:7545`,
+    isActive: false
   },
   rinkebyArbitrum: {
     name: "Arbitrum Testnet",
@@ -101,12 +104,14 @@ export const NETWORKS = {
     chainId: 421611,
     blockExplorer: "https://rinkeby-explorer.arbitrum.io/#/",
     rpcUrl: `https://rinkeby.arbitrum.io/rpc`,
+    isActive: false
   },
   arbitrum: {
     name: "Arbitrum",
     color: "#50a0ea",
     chainId: 42161,
     blockExplorer: "https://explorer.arbitrum.io/#/",
+    isActive: false,
     rpcUrl: `https://arb1.arbitrum.io/rpc`,
     gasPrice: 0,
   },
@@ -116,6 +121,7 @@ export const NETWORKS = {
     chainId: 69,
     blockExplorer: "https://kovan-optimistic.etherscan.io/",
     rpcUrl: `https://kovan.optimism.io`,
+    isActive: false,
     gasPrice: 0,
   },
   optimism: {
@@ -123,6 +129,7 @@ export const NETWORKS = {
     color: "#f01a37",
     chainId: 10,
     blockExplorer: "https://optimistic.etherscan.io/",
+    isActive: false,
     rpcUrl: `https://mainnet.optimism.io`,
   },
   fujiAvalanche: {
@@ -131,6 +138,7 @@ export const NETWORKS = {
     chainId: 43113,
     blockExplorer: "https://cchain.explorer.avax-test.network/",
     rpcUrl: `https://api.avax-test.network/ext/bc/C/rpc`,
+    isActive: false,
     gasPrice: 225000000000,
   },
   mainnetAvalanche: {
@@ -139,6 +147,7 @@ export const NETWORKS = {
     chainId: 43114,
     blockExplorer: "https://cchain.explorer.avax.network/",
     rpcUrl: `https://api.avax.network/ext/bc/C/rpc`,
+    isActive: false,
     gasPrice: 225000000000,
   },
   testnetHarmony: {
@@ -146,6 +155,8 @@ export const NETWORKS = {
     color: "#00b0ef",
     chainId: 1666700000,
     blockExplorer: "https://explorer.pops.one/",
+    isActive: true,
+    bundleContractAddress: "0x5F2688F00b250E423C6b461115e9eff52f1D7434",
     rpcUrl: `https://api.s0.b.hmny.io`,
     gasPrice: 1000000000,
   },
@@ -154,6 +165,7 @@ export const NETWORKS = {
     color: "#00b0ef",
     chainId: 1666600000,
     blockExplorer: "https://explorer.harmony.one/",
+    isActive: false,
     rpcUrl: `https://api.harmony.one`,
     gasPrice: 1000000000,
   },
@@ -162,6 +174,7 @@ export const NETWORKS = {
     color: "",
     chainId: 1666600001,
     blockExplorer: "https://explorer.near.org/",
+    isActive: false,
     rpcUrl: ``,
     gasPrice: 1000000000,
   },
@@ -170,6 +183,7 @@ export const NETWORKS = {
     color: "",
     chainId: 1666600002,
     blockExplorer: "https://explorer.testnet.near.org/",
+    isActive: false,
     rpcUrl: ``,
     gasPrice: 1000000000,
   },
@@ -177,8 +191,9 @@ export const NETWORKS = {
 
 export const NETWORK = chainId => {
   for (const n in NETWORKS) {
-    if (NETWORKS[n].chainId === chainId) {
+    if (NETWORKS[n].chainId === chainId && NETWORKS[n].isActive) {
       return NETWORKS[n];
     }
   }
+  return "not supported"
 };
