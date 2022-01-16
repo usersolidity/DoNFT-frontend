@@ -64,10 +64,10 @@ export default {
     async handleWrap () {
       try {
         for (const contractAddress of this.contracts) {
-          let isApproved = await checkApproval(this.provider, contractAddress)
+          let isApproved = await checkApproval(this.provider, contractAddress, this.bundleContractAddress)
           if (!isApproved) {
             try {
-              await approveForAll(this.provider, contractAddress)
+              await approveForAll(this.provider, contractAddress, this.bundleContractAddress)
             } catch (e) {
               this.setStatus(this.Status.Cancelled)
               console.log(e)
@@ -78,7 +78,7 @@ export default {
 
         this.setStatus(this.Status.Minting)
         try {
-          let transactionResult = await wrapNFTS(this.provider, this.ipfs, this.tokensForWrapping)
+          let transactionResult = await wrapNFTS(this.provider, this.ipfs, this.tokensForWrapping, this.bundleContractAddress)
           this.transactionHash = transactionResult.hash
           if (this.transactionHash) {
             this.provider.once(this.transactionHash, (transaction) => {
@@ -111,10 +111,11 @@ export default {
       "statusId": "getStatus",
       "contracts": "getContractsWithChoices",
       "tokensForWrapping": "tokensForWrapping",
-      "ipfs": "getIpfs"
+      "ipfs": "getIpfs",
+      "bundleContractAddress": "getBundleContractAddress"
     }),
     tokenPool () {
-      return this.getTokenPoolByContract(process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS)
+      return this.getTokenPoolByContract(this.bundleContractAddress)
     },
     wrapButtonText () {
       if (this.statusId === this.Status.Minting) {

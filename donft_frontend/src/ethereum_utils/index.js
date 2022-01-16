@@ -8,8 +8,6 @@ import {getNftInfosByAddress} from "../api";
 import axios from "axios";
 import {Status} from "../store";
 
-const BUNDLE_CONTRACT_ADDRESS = process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS
-
 export async function detectWeb3Providers () {
     let provider = null
     try {
@@ -136,18 +134,18 @@ export function getNFTContract(provider, contractAddress) {
     return new ethers.Contract(contractAddress, ERC721_CONTRACT_ABI, signer)
 }
 
-function getBundleContract(provider) {
+function getBundleContract(provider, bundleContractAddress) {
     const signer = provider.getSigner()
-    return new ethers.Contract(BUNDLE_CONTRACT_ADDRESS, BUNDLE_CONTRACT_ABI, signer)
+    return new ethers.Contract(bundleContractAddress, BUNDLE_CONTRACT_ABI, signer)
 }
 
 export async function mintNFT({state, dispatch}, tokenAddress, tokenId, tokenURI) {
-    const bundleContract = getBundleContract(state.ethersProvider)
+    const bundleContract = getBundleContract(state.ethersProvider, state.bundleContractAddress)
     console.log(tokenAddress, tokenId, tokenURI)
-    let isApproved = await checkApproval(state.ethersProvider, tokenAddress)
+    let isApproved = await checkApproval(state.ethersProvider, tokenAddress, state.bundleContractAddress)
     if (!isApproved) {
         try {
-            let tx = await approveForAll(state.ethersProvider, tokenAddress)
+            let tx = await approveForAll(state.ethersProvider, tokenAddress, state.bundleContractAddress)
             //wait for mining tx
             console.log(tx)
             dispatch('setStatus', Status.Approving)
@@ -165,8 +163,8 @@ export async function mintNFT({state, dispatch}, tokenAddress, tokenId, tokenURI
     return await bundleContract.bundleWithTokenURI([{token: tokenAddress, tokenId}], tokenURI)
 }
 
-export async function wrapNFTS(provider, ipfsInstance, tokens) {
-    const bundleContract = getBundleContract(provider)
+export async function wrapNFTS(provider, ipfsInstance, tokens, bundleContractAddress) {
+    const bundleContract = getBundleContract(provider, bundleContractAddress)
     let tokenCID = await pushObjectToIpfs(ipfsInstance, generateBundleMeta(Date.now().toString()))
     return await bundleContract.bundleWithTokenURI(tokens, `ipfs://${tokenCID}`)
 }
@@ -179,23 +177,23 @@ function generateBundleMeta(name) {
     }
 }
 
-export async function checkApproval(provider, contractAddress) {
+export async function checkApproval(provider, contractAddress, bundleContractAddress) {
     const nftContract = getNFTContract(provider, contractAddress)
-    return await nftContract.isApprovedForAll(await provider.getSigner().getAddress(), BUNDLE_CONTRACT_ADDRESS)
+    return await nftContract.isApprovedForAll(await provider.getSigner().getAddress(), bundleContractAddress)
 }
 
-export async function approveForAll(provider, contractAddress) {
+export async function approveForAll(provider, contractAddress, bundleContractAddress) {
     const nftContract = getNFTContract(provider, contractAddress)
-    return await nftContract.setApprovalForAll(BUNDLE_CONTRACT_ADDRESS, true)
+    return await nftContract.setApprovalForAll(bundleContractAddress, true)
 }
 
-export async function listBundledTokenIds(provider, bundleId) {
-    const bundleContract = getBundleContract(provider, BUNDLE_CONTRACT_ADDRESS)
+export async function listBundledTokenIds(provider, bundleId, bundleContractAddress) {
+    const bundleContract = getBundleContract(provider, bundleContractAddress)
     return await bundleContract.bundeledTokensOf(bundleId)
 }
 
-export async function unwrap(provider, bundleId) {
-    const bundleContract = getBundleContract(provider, BUNDLE_CONTRACT_ADDRESS)
+export async function unwrap(provider, bundleId, bundleContractAddress) {
+    const bundleContract = getBundleContract(provider, bundleContractAddress)
     return await bundleContract.unbundle(bundleId)
 }
 
@@ -227,21 +225,21 @@ export async function listTokensOfOwner(contract, account) {
     return owned.map(id => ({id, meta: null}))
 }
 
-export async function listTokensOfOwnerRarible(ownerAddress) {
+export async function listTokensOfOwnerRarible(bundleContractAddress, ownerAddress) {
     let result = await axios.get(process.env.VUE_APP_RARIBLE_URL + '/nft/items/byOwner', {
         params: {
             owner: ownerAddress
         }
     })
-    let tokens = result.data.items.filter(x => x.contract !== process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS.toLowerCase()).map(x => ({id: x.tokenId, contractAddress: x.contract}))
+    let tokens = result.data.items.filter(x => x.contract !== bundleContractAddress.toLowerCase()).map(x => ({id: x.tokenId, contractAddress: x.contract}))
     console.log(tokens)
     return tokens
 }
 
-export async function getMetadataURIForToken (provider, contractAddress, tokenId) {
+export async function getMetadataURIForToken (provider, contractAddress, tokenId, bundleContractAddress) {
     let contract
-    if (contractAddress === process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS) {
-        contract = getBundleContract(provider)
+    if (contractAddress === bundleContractAddress) {
+        contract = getBundleContract(provider, bundleContractAddress)
     } else {
         contract = getNFTContract(provider, contractAddress)
     }
@@ -428,8 +426,8 @@ export async function checkNet(ethersProvider) {
     return currentNet.name !== process.env.VUE_APP_NET_NAME
 }
 
-export async function sendWrappedTokenTo(provider, fromAddress, toAddress, tokenId) {
-    const bundleContract = getBundleContract(provider, BUNDLE_CONTRACT_ADDRESS)
+export async function sendWrappedTokenTo(provider, fromAddress, toAddress, tokenId, bundleContractAddress) {
+    const bundleContract = getBundleContract(provider, bundleContractAddress)
     return await bundleContract.transferFrom(fromAddress, toAddress, tokenId)
 }
 

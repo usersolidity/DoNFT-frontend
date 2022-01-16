@@ -92,7 +92,7 @@ export default {
       try {
         this.setStatus(this.Status.Minting)
         try {
-          let transactionResult = await unwrap(this.provider, this.tokenPool.choices[0])
+          let transactionResult = await unwrap(this.provider, this.tokenPool.choices[0], this.bundleContractAddress)
           this.transactionHash = transactionResult.hash
           if (this.transactionHash) {
             this.provider.once(this.transactionHash, (transaction) => {
@@ -116,7 +116,7 @@ export default {
       this.$router.push({"name": 'ChooseNFT'})
     },
     async handleSendTo() {
-      await sendWrappedTokenTo(this.provider, await this.provider.getSigner().getAddress(), this.toAddress, this.tokenPool.choices[0])
+      await sendWrappedTokenTo(this.provider, await this.provider.getSigner().getAddress(), this.toAddress, this.tokenPool.choices[0], this.bundleContractAddress)
     }
   },
   computed: {
@@ -126,10 +126,11 @@ export default {
       "getTokenPoolByContract": "getTokenPoolByContract",
       "statusId": "getStatus",
       "contracts": "contractsExceptWrapped",
-      "account": "getAccount"
+      "account": "getAccount",
+      "bundleContractAddress": "getBundleContractAddress",
     }),
     tokenPool() {
-      return this.getTokenPoolByContract(process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS)
+      return this.getTokenPoolByContract(this.bundleContractAddress)
     },
     unwrapButtonText() {
       if (this.statusId === this.Status.Minting) {

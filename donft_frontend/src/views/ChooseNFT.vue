@@ -23,7 +23,7 @@
         </b-row>
         <b-row>
           <b-col class="padding-div">
-            <token-deck @tokenClicked="chooseBundle" card-size="standard" justification="justify-content-left" :contract-addresses="[wrappedContractAddress]"/>
+            <token-deck @tokenClicked="chooseBundle" card-size="standard" justification="justify-content-left" :contract-addresses="[getBundleContractAddress]"/>
           </b-col>
         </b-row>
        </div>
@@ -42,7 +42,6 @@ export default {
   },
   data () {
     return {
-      wrappedContractAddress: process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS,
       tab: 'wrapped',
       effectsEnabled: process.env.VUE_APP_EFFECTS_ENABLED === 'true'
     }
@@ -52,7 +51,8 @@ export default {
         'getTokenPoolByContract',
         'getCurrentContract',
         'contractsExceptWrapped',
-        'numChoices'
+        'numChoices',
+        'getBundleContractAddress'
     ])
   },
   methods: {
@@ -67,7 +67,7 @@ export default {
     chooseNFT ({id, contractAddress}) {
       let tokenPool = this.getTokenPoolByContract(contractAddress)
       let newChoice = []
-      if (contractAddress === this.wrappedContractAddress) {
+      if (contractAddress === this.getBundleContractAddress) {
         newChoice.push(id)
       } else {
         newChoice = [...tokenPool.choices]
@@ -91,7 +91,7 @@ export default {
         vm.$router.push({name: 'Home'})
       }
       await Promise.all([vm.$store.dispatch('setUserTokenIds'),
-        vm.$store.dispatch('setNFTS', {contractAddress: process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS})])
+        vm.$store.dispatch('setNFTS', {contractAddress: vm.getBundleContractAddress})])
     })
   },
 

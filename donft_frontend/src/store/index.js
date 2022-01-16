@@ -18,6 +18,7 @@ import {getEffects, modifyPicture} from "../api";
 import {BigNumber, ethers} from "ethers";
 import * as IPFS from "ipfs-core";
 import {getImageURLFromObject} from "../utilities";
+import {NETWORK, NETWORKS} from "../constants";
 
 Vue.use(Vuex)
 
@@ -55,6 +56,7 @@ const store = new Vuex.Store({
         networkName: null,
         contractAddresses: [],
         currentContractAddress: null,
+        bundleContractAddress: null,
         nfts: [],
         nftChoice: [],
         nftLoading: false,
@@ -74,6 +76,9 @@ const store = new Vuex.Store({
         },
         setAccountAddress (state, accountAddress) {
             state.accountAddress = accountAddress
+        },
+        SET_BUNDLE_CONTRACT_ADDRESS (state, address) {
+            state.bundleContractAddress = address
         },
         SET_CURRENT_CONTRACT_ADDRESS (state, address) {
             state.currentContractAddress = address
@@ -108,7 +113,7 @@ const store = new Vuex.Store({
             state.nfts = [...state.nfts]
         },
         UNSET_ALL_NFTS_EXCEPT_BUNDLED (state) {
-            let onlyBundled  = state.nfts.filter(x => x.contractAddress === process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS)
+            let onlyBundled  = state.nfts.filter(x => x.contractAddress === state.bundleContractAddress)
             state.nfts = [...onlyBundled]
         },
         UNSET_ALL_NFTS (state) {
@@ -187,12 +192,14 @@ const store = new Vuex.Store({
                 commit('setAccountAddress', accounts[0])
             }
             const network = await library.getNetwork()
-            commit('setNetwork', network.name)
+            commit('setNetwork', network.chainId)
             commit('SET_ACTIVE', true)
+
+            commit('SET_BUNDLE_CONTRACT_ADDRESS', NETWORK(network.chainId).bundleContractAddress)
 
             provider.on("connect", async (info) => {
                 // let chainId = parseInt(info.chainId)
-                commit('setNetwork', info.name)
+                commit('setNetwork', info.chainId)
                 console.log("connect", info)
             });
 
@@ -226,14 +233,14 @@ const store = new Vuex.Store({
         },
         async setAccount ({commit, dispatch, state}) {
             commit('setAccountAddress', await connectToMetamask(state.ethersProvider))
-            await dispatch('setNFTS', {contractAddress: process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS})
+            await dispatch('setNFTS', {contractAddress: state.bundleContractAddress})
         },
         async setNFTS ({commit, state}, {contractAddress}) {
             let contract = getNFTContract(state.ethersProvider, contractAddress)
             commit('SET_NFTS_BY_CONTRACT', {nfts: await listTokensOfOwner(contract, state.accountAddress), contractAddress})
         },
         async setWrappedTokenIds ({commit, state}, {bundleId}) {
-            let tokens = await listBundledTokenIds(state.ethersProvider, bundleId)
+            let tokens = await listBundledTokenIds(state.ethersProvider, bundleId, state.bundleContractAddress)
             let aggregation = {}
             for (const nft of tokens) {
                 if (!Object.prototype.hasOwnProperty.call(aggregation, nft.token)) {
@@ -247,7 +254,7 @@ const store = new Vuex.Store({
             }
         },
         async setUserTokenIds ({commit, state}) {
-            let tokens = await listTokensOfOwnerRarible(state.accountAddress)
+            let tokens = await listTokensOfOwnerRarible(state.bundleContractAddress, state.accountAddress)
             let aggregation = {}
             for (const nft of tokens) {
                 if (!Object.prototype.hasOwnProperty.call(aggregation, nft.contractAddress)) {
@@ -270,7 +277,7 @@ const store = new Vuex.Store({
             commit('SET_TOKEN_URI', {
                 contractAddress,
                 tokenId,
-                tokenURI: await getMetadataURIForToken(state.ethersProvider, contractAddress, tokenId)
+                tokenURI: await getMetadataURIForToken(state.ethersProvider, contractAddress, tokenId, state.bundleContractAddress)
             })
         },
         async setTokenMeta ({commit, getters, state}, {contractAddress, tokenId}) {
@@ -359,7 +366,12 @@ const store = new Vuex.Store({
         getDeployedPictureMeta: state => state.deployedPictureMeta,
         getStatus: state => state.status,
         getTransactionHash: state => state.nftTransactionHash,
-        networkIsCorrect: state => state.networkName === process.env.VUE_APP_NET_NAME,
+        networkIsCorrect: (state) => {
+            for (const network in NETWORKS) {
+                if (NETWORKS[network].chainId === state.networkName) return true
+            }
+            return false
+        },
         getNftsAreLoading: state => state.nftLoading,
         getWrappedNftsAreLoading: state => state.wrappedNftLoading,
         getTokenById: (state) => (address, id) => {
@@ -384,11 +396,11 @@ const store = new Vuex.Store({
             return state.currentContractAddress
         },
         getContractsWithChoices: (state) => {
-            return state.nfts.filter(x => x.choices !== [] && x.contractAddress !== process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS).map(x => x.contractAddress)
+            return state.nfts.filter(x => x.choices !== [] && x.contractAddress !== state.bundleContractAddress).map(x => x.contractAddress)
         },
         tokensForWrapping: (state) => {
             let tokens = []
-            for (const pool of state.nfts.filter(x => x.choices !== [] && x.contractAddress !== process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS)) {
+            for (const pool of state.nfts.filter(x => x.choices !== [] && x.contractAddress !== state.bundleContractAddress)) {
                 for (const tokenId of pool.choices) {
                     tokens.push({token: pool.contractAddress, tokenId: Number(tokenId)})
                 }
@@ -396,11 +408,11 @@ const store = new Vuex.Store({
             return tokens
         },
         contractsExceptWrapped: (state) => {
-            return state.nfts.filter(x => x.contractAddress !== process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS).map(x => x.contractAddress)
+            return state.nfts.filter(x => x.contractAddress !== state.bundleContractAddress).map(x => x.contractAddress)
         },
         numChoices: (state) => {
             let sum = 0
-            for (const nft of state.nfts.filter(x => x.contractAddress !== process.env.VUE_APP_BUNDLE_CONTRACT_ADDRESS)) {
+            for (const nft of state.nfts.filter(x => x.contractAddress !== state.bundleContractAddress)) {
                 sum += nft.choices.length
             }
             return sum
@@ -408,7 +420,8 @@ const store = new Vuex.Store({
         getNFTforModification: (state, getters) => {
             const {token, tokenId} = getters.tokensForWrapping[0]
             return getters.getTokenById(token, String(tokenId))
-        }
+        },
+        getBundleContractAddress: (state) => state.bundleContractAddress
     }
 })
 
